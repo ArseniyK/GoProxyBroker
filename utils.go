@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ProxyBroker/types"
 	"github.com/oschwald/maxminddb-golang/v2"
 	"io"
 	"log"
@@ -62,4 +63,27 @@ func MakeSet(slice []string) map[string]struct{} {
 		set[v] = struct{}{}
 	}
 	return set
+}
+
+func distinct() (input chan types.Proxy, output chan types.Proxy) {
+	type Key struct {
+		IP   string
+		Port int
+	}
+
+	input = make(chan types.Proxy, 10)
+	output = make(chan types.Proxy, 10)
+
+	go func() {
+		set := make(map[Key]types.Proxy)
+		for proxy := range input {
+			key := Key{IP: proxy.IP, Port: proxy.Port}
+			if _, ok := set[key]; !ok {
+				set[key] = proxy
+				output <- proxy
+			}
+		}
+		close(output)
+	}()
+	return
 }

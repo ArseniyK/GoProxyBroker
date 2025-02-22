@@ -32,40 +32,45 @@ func (broker *Broker) Find(limit int, check bool) {
 	var wg sync.WaitGroup
 	checkWg := sync.WaitGroup{}
 	proxyChan := make(chan types.Proxy, 10)
+	input, output := distinct()
 
 	for _, provider := range providers.Providers {
 		wg.Add(1)
 		go func(p providers.Provider) {
 			defer wg.Done()
-			proxies := p.GetProxies()
-
-			for proxy := range proxies {
-				checkWg.Add(1)
-				go func(px types.Proxy) {
-					defer checkWg.Done()
-					if check {
-						px = CheckProxy(px, broker.publicIP)
-					}
-					px.CountryCode = GetGeoIP(px.IP)
-					if px.IsAlive && broker.checkCountry(px) && broker.checkLevels(px) {
-						proxyChan <- px
-					}
-				}(proxy)
+			for proxy := range p.GetProxies() {
+				input <- proxy
 			}
 		}(provider)
 	}
 
 	go func() {
+		for proxy := range output {
+			checkWg.Add(1)
+			go func(px types.Proxy) {
+				defer checkWg.Done()
+				if check {
+					px = CheckProxy(px, broker.publicIP)
+				}
+				px.CountryCode = GetGeoIP(px.IP)
+				if px.IsAlive && broker.checkCountry(px) && broker.checkLevels(px) {
+					proxyChan <- px
+				}
+			}(proxy)
+		}
+	}()
+
+	go func() {
 		wg.Wait()
 		checkWg.Wait()
 		close(proxyChan)
+		close(input)
 	}()
 
 	count := 0
 	for proxy := range proxyChan {
-		fmt.Println(proxy.String())
+		fmt.Println(proxy)
 		count++
-
 		if limit > 0 && count >= limit {
 			break
 		}

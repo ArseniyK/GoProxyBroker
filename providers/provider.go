@@ -4,11 +4,11 @@ import (
 	"ProxyBroker/types"
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"time"
 )
 
@@ -29,16 +29,25 @@ type Provider struct {
 	Timeout   time.Duration
 }
 
-func (provider *Provider) GetProxies() []types.Proxy {
+func (provider *Provider) GetProxies() <-chan types.Proxy {
 	client := &http.Client{Timeout: provider.Timeout, Transport: &types.TransportWrapper{Headers: globalHeaders}}
-	proxies, err := provider.fetchProxies(client)
 
-	if err != nil {
-		log.Printf("Error fetching proxies from %s: %v", provider.URL, err)
-		return []types.Proxy{}
-	}
+	ch := make(chan types.Proxy)
+	go func() {
+		defer close(ch) // Close channel when done
+		proxies, err := provider.fetchProxies(client)
 
-	return proxies
+		if err != nil {
+			log.Printf("Error fetching proxies from %s: %v", provider.URL, err)
+			return
+		}
+
+		for _, proxy := range proxies {
+			ch <- proxy
+		}
+
+	}()
+	return ch
 
 }
 
@@ -85,7 +94,9 @@ func (provider *Provider) findProxies(page string) []types.Proxy {
 }
 
 func toInt(s string) int {
-	var n int
-	fmt.Sscanf(s, "%d", &n)
-	return n
+	num, err := strconv.Atoi(s)
+	if err != nil {
+		return 0
+	}
+	return num
 }

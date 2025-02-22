@@ -39,11 +39,10 @@ func (broker *Broker) Find(limit int, check bool) {
 			defer wg.Done()
 			proxies := p.GetProxies()
 
-			for _, proxy := range proxies {
+			for proxy := range proxies {
 				checkWg.Add(1)
 				go func(px types.Proxy) {
 					defer checkWg.Done()
-
 					if check {
 						px = CheckProxy(px, broker.publicIP)
 					}
@@ -76,7 +75,7 @@ func (broker *Broker) Find(limit int, check bool) {
 }
 
 func (broker *Broker) checkCountry(proxy types.Proxy) bool {
-	if broker.countries == nil && len(broker.countries) == 0 {
+	if broker.countries == nil || len(broker.countries) == 0 {
 		return true
 	}
 	if _, ok := broker.countries[proxy.CountryCode]; ok {
@@ -87,7 +86,7 @@ func (broker *Broker) checkCountry(proxy types.Proxy) bool {
 }
 
 func (broker *Broker) checkLevels(proxy types.Proxy) bool {
-	if broker.levels == nil && len(broker.levels) == 0 {
+	if broker.levels == nil || len(broker.levels) == 0 {
 		return true
 	}
 

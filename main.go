@@ -34,7 +34,13 @@ func main() {
 	})
 
 	flag.Parse()
-	countries := strings.Split(countriesString, ",")
+
+	var countries []string
+	if countriesString == "" {
+		countries = make([]string, 0)
+	} else {
+		countries = strings.Split(countriesString, ",")
+	}
 
 	b := Broker{}
 	b.Init(countries, levels)

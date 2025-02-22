@@ -17,7 +17,7 @@ func Any(arr []bool) bool {
 	return false
 }
 
-func getPublicIP() (string, error) {
+func GetPublicIP() (string, error) {
 	// Use an external service to fetch the public IP
 	resp, err := http.Get("https://api64.ipify.org?format=text")
 	if err != nil {
@@ -35,7 +35,7 @@ func getPublicIP() (string, error) {
 	return string(body), nil
 }
 
-func getGeoIP(IP string) string {
+func GetGeoIP(IP string) string {
 	db, err := maxminddb.Open("data/geolite2-country-ipv4.mmdb")
 	if err != nil {
 		println(err)
@@ -54,4 +54,12 @@ func getGeoIP(IP string) string {
 	}
 
 	return record.Code
+}
+
+func MakeSet(slice []string) map[string]struct{} {
+	set := make(map[string]struct{}, len(slice))
+	for _, v := range slice {
+		set[v] = struct{}{}
+	}
+	return set
 }

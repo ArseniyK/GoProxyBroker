@@ -74,9 +74,10 @@ func (provider *Provider) findProxies(page string) []types.Proxy {
 		}
 
 		proxies = append(proxies, types.Proxy{
-			IP:   match[1],
-			Port: toInt(match[2]),
-			Type: provider.ProxyType,
+			IP:      match[1],
+			Port:    toInt(match[2]),
+			Type:    provider.ProxyType,
+			IsAlive: true,
 		})
 	}
 

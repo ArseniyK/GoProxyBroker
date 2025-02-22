@@ -8,17 +8,21 @@ import (
 )
 
 type Broker struct {
-	publicIP string
+	publicIP  string
+	countries map[string]struct{}
 }
 
-func (broker *Broker) Init() {
-	publicIP, err := getPublicIP()
+func (broker *Broker) Init(countries []string) {
+	publicIP, err := GetPublicIP()
 	if err != nil {
 		fmt.Println("Error fetching public IP:", err)
 		return
 	}
-	fmt.Println("Public IP:", publicIP)
 	broker.publicIP = publicIP
+	broker.countries = MakeSet(countries)
+
+	fmt.Println("Public IP:", broker.publicIP)
+	fmt.Println("Countries:", countries)
 }
 
 func (broker *Broker) Find(limit int, check bool) {
@@ -36,12 +40,12 @@ func (broker *Broker) Find(limit int, check bool) {
 				checkWg.Add(1)
 				go func(px types.Proxy) {
 					defer checkWg.Done()
+
 					if check {
-						checked := CheckProxy(px, broker.publicIP)
-						if checked.IsAlive {
-							proxyChan <- checked
-						}
-					} else {
+						px = CheckProxy(px, broker.publicIP)
+					}
+					px.CountryCode = GetGeoIP(px.IP)
+					if px.IsAlive && broker.checkCountry(px) {
 						proxyChan <- px
 					}
 				}(proxy)
@@ -57,7 +61,6 @@ func (broker *Broker) Find(limit int, check bool) {
 
 	count := 0
 	for proxy := range proxyChan {
-		proxy.CountryCode = getGeoIP(proxy.IP)
 		fmt.Println(proxy.String())
 		count++
 
@@ -67,4 +70,15 @@ func (broker *Broker) Find(limit int, check bool) {
 	}
 
 	fmt.Printf("Found %d proxy\n", count)
+}
+
+func (broker *Broker) checkCountry(proxy types.Proxy) bool {
+	if broker.countries == nil && len(broker.countries) == 0 {
+		return true
+	}
+	if _, ok := broker.countries[proxy.CountryCode]; ok {
+		return true
+	} else {
+		return false
+	}
 }

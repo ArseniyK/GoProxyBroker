@@ -10,9 +10,10 @@ import (
 type Broker struct {
 	publicIP  string
 	countries map[string]struct{}
+	levels    []types.ProxyLevel
 }
 
-func (broker *Broker) Init(countries []string) {
+func (broker *Broker) Init(countries []string, levels []types.ProxyLevel) {
 	publicIP, err := GetPublicIP()
 	if err != nil {
 		fmt.Println("Error fetching public IP:", err)
@@ -20,9 +21,11 @@ func (broker *Broker) Init(countries []string) {
 	}
 	broker.publicIP = publicIP
 	broker.countries = MakeSet(countries)
+	broker.levels = levels
 
 	fmt.Println("Public IP:", broker.publicIP)
 	fmt.Println("Countries:", countries)
+	fmt.Println("Levels:", levels)
 }
 
 func (broker *Broker) Find(limit int, check bool) {
@@ -45,7 +48,7 @@ func (broker *Broker) Find(limit int, check bool) {
 						px = CheckProxy(px, broker.publicIP)
 					}
 					px.CountryCode = GetGeoIP(px.IP)
-					if px.IsAlive && broker.checkCountry(px) {
+					if px.IsAlive && broker.checkCountry(px) && broker.checkLevels(px) {
 						proxyChan <- px
 					}
 				}(proxy)
@@ -81,4 +84,21 @@ func (broker *Broker) checkCountry(proxy types.Proxy) bool {
 	} else {
 		return false
 	}
+}
+
+func (broker *Broker) checkLevels(proxy types.Proxy) bool {
+	if broker.levels == nil && len(broker.levels) == 0 {
+		return true
+	}
+
+	if proxy.Level == types.NONE {
+		return true
+	}
+
+	for _, v := range broker.levels {
+		if v == proxy.Level {
+			return true
+		}
+	}
+	return false
 }

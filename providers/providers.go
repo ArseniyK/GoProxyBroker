@@ -7,6 +7,20 @@ import (
 
 var Providers = []Provider{
 	{
+		URL: "https://www.proxy-list.download/api/v1/get?type=http",
+		ProxyType: []types.ProxyType{
+			types.HTTP,
+		},
+		Timeout: 30 * time.Second,
+	},
+	{
+		URL: "https://api.proxyscrape.com/?request=getproxies&proxytype=http",
+		ProxyType: []types.ProxyType{
+			types.HTTP,
+		},
+		Timeout: 30 * time.Second,
+	},
+	{
 		URL: "https://proxy-daily.com/",
 		ProxyType: []types.ProxyType{
 			types.HTTP, types.HTTPS,

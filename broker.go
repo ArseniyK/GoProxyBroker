@@ -36,7 +36,12 @@ func (broker *Broker) Find(limit int, check bool) {
 				checkWg.Add(1)
 				go func(px types.Proxy) {
 					defer checkWg.Done()
-					if !check || CheckProxy(px, broker.publicIP) {
+					if check {
+						checked := CheckProxy(px, broker.publicIP)
+						if checked.IsAlive {
+							proxyChan <- checked
+						}
+					} else {
 						proxyChan <- px
 					}
 				}(proxy)

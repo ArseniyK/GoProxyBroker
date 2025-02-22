@@ -3,11 +3,12 @@ package types
 type ProxyLevel int
 
 const (
+	NONE        ProxyLevel = iota
 	TRANSPARENT ProxyLevel = iota
 	ANONYMOUS
 	HIGH
 )
 
 func (p ProxyLevel) String() string {
-	return [...]string{"Transparent", "Anonymous", "High"}[p]
+	return [...]string{"None", "Transparent", "Anonymous", "High"}[p]
 }

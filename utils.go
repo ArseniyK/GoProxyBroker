@@ -1,8 +1,11 @@
 package main
 
 import (
+	"github.com/oschwald/maxminddb-golang/v2"
 	"io"
+	"log"
 	"net/http"
+	"net/netip"
 )
 
 func Any(arr []bool) bool {
@@ -30,4 +33,25 @@ func getPublicIP() (string, error) {
 
 	// Convert response to string
 	return string(body), nil
+}
+
+func getGeoIP(IP string) string {
+	db, err := maxminddb.Open("data/geolite2-country-ipv4.mmdb")
+	if err != nil {
+		println(err)
+	}
+	defer db.Close()
+
+	addr := netip.MustParseAddr(IP)
+
+	var record struct {
+		Code string `maxminddb:"country_code"`
+	}
+
+	err = db.Lookup(addr).Decode(&record)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return record.Code
 }

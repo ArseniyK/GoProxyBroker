@@ -57,6 +57,7 @@ func (broker *Broker) Find(limit int, check bool) {
 
 	count := 0
 	for proxy := range proxyChan {
+		proxy.CountryCode = getGeoIP(proxy.IP)
 		fmt.Println(proxy.String())
 		count++
 

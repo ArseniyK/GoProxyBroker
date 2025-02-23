@@ -31,7 +31,7 @@ func (broker *Broker) Init(countries []string, levels []types.ProxyLevel) {
 func (broker *Broker) Find(limit int, check bool) {
 	var wg sync.WaitGroup
 	checkWg := sync.WaitGroup{}
-	proxyChan := make(chan types.Proxy, 10)
+	proxyChan := make(chan types.Proxy, 100)
 	input, output := distinct()
 
 	for _, provider := range providers.Providers {
@@ -71,6 +71,7 @@ func (broker *Broker) Find(limit int, check bool) {
 	for proxy := range proxyChan {
 		fmt.Println(proxy)
 		count++
+
 		if limit > 0 && count >= limit {
 			break
 		}
@@ -83,11 +84,8 @@ func (broker *Broker) checkCountry(proxy types.Proxy) bool {
 	if broker.countries == nil || len(broker.countries) == 0 {
 		return true
 	}
-	if _, ok := broker.countries[proxy.CountryCode]; ok {
-		return true
-	} else {
-		return false
-	}
+	_, ok := broker.countries[proxy.CountryCode]
+	return ok
 }
 
 func (broker *Broker) checkLevels(proxy types.Proxy) bool {

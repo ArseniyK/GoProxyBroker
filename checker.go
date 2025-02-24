@@ -85,8 +85,13 @@ func checkHTTP(proxy types.Proxy, publicIp string) (CheckStatus, error) {
 		if err != nil {
 			return CheckStatus{isAlive: false}, fmt.Errorf("proxy check failed: %v", err)
 		}
+		bodyString := string(body)
 
-		return CheckStatus{isAlive: true, level: checkLevel(string(body), publicIp)}, nil
+		if !strings.Contains(bodyString, testURL) {
+			return CheckStatus{isAlive: false}, fmt.Errorf("proxy check failed: %v", err)
+		}
+
+		return CheckStatus{isAlive: true, level: checkLevel(bodyString, publicIp)}, nil
 	}
 
 	return CheckStatus{isAlive: false}, fmt.Errorf("proxy returned non-200 status: %d", response.StatusCode)
